@@ -20,7 +20,7 @@ async def on_ready():
     print('> Loading cogs...')
 
     # bot cogs
-    await bot.add_cog(Currency(bot))
+    # await bot.add_cog(Currency(bot))
     await bot.add_cog(Server(bot))
    
 
