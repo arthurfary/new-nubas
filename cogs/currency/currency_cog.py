@@ -10,20 +10,24 @@ class Currency(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-        self.conn = sqlite3.connect('example.db')
+        # NEE TO ADD CONN TO ALL FUNTIOPNS
+        conn = sqlite3.connect('currency.db')
+
         
         '''
-        self.conn.execute('DROP TABLE users')
-        self.conn.commit()
+        conn.execute('DROP TABLE users')
+        conn.commit()
         exit()
 
         '''
         # create in first execution
-        self.conn.execute('''CREATE TABLE IF NOT EXISTS users
+        conn.execute('''CREATE TABLE IF NOT EXISTS users
              (id INTEGER PRIMARY KEY,
              account INTAGER NOT NULL,
              name TEXT NOT NULL,
              money INTEGER NOT NULL);''')
+
+        conn.close()
         
     def get_uid(self, ctx) -> int:
         '''
@@ -48,20 +52,22 @@ class Currency(commands.Cog):
 
         # # # # #
         uid = self.get_uid(ctx)
+        conn = sqlite3.connect('currency.db')
 
-        cursor = self.conn.execute("SELECT * from users WHERE id=?", (uid,))
+        cursor = conn.execute("SELECT * from users WHERE id=?", (uid,))
 
         if cursor.fetchone() is not None:
             await ctx.message.author.send('Se ja tem conta caraio')
             return 
 
         else:
-            self.conn.execute("INSERT INTO users (id, account, name, money) VALUES (?, ?, ?, ?)", (uid, account_number, ctx.message.author.name, 0))
-            self.conn.commit()
+            conn.execute("INSERT INTO users (id, account, name, money) VALUES (?, ?, ?, ?)", (uid, account_number, ctx.message.author.name, 0))
+            conn.commit()
 
             await ctx.message.author.send('Te adicionei ao esquema, mas deixa baixo :shushing_face:')
 
         cursor.close()
+        conn.close()
 
     @commands.command()
     async def saldo(self, ctx):
@@ -71,8 +77,9 @@ class Currency(commands.Cog):
 
         # # # # #
         uid = self.get_uid(ctx)
+        conn = sqlite3.connect('currency.db')
 
-        cursor = self.conn.execute("SELECT * from users WHERE id=?", (uid,))
+        cursor = conn.execute("SELECT * from users WHERE id=?", (uid,))
 
         row = cursor.fetchone()
 
@@ -80,71 +87,92 @@ class Currency(commands.Cog):
             await ctx.message.author.send('Se n tem conta nao besta')
             return 
         else:
-            money = row[2]
+            money = row[3]
             await ctx.message.author.send(f'Você tem {money} na sua conta :moneybag:')
 
         cursor.close()
+        conn.close()
     
     @commands.command()
     async def showdb(self, ctx):
-        cursor = self.conn.execute("SELECT * from users")
+        conn = sqlite3.connect('currency.db')
+        cursor = conn.execute("SELECT * from users")
 
         for row in cursor:
             await ctx.message.author.send(row)
 
     @commands.command()
-    async def dix(self, ctx, account_number):
+    async def dix(self, ctx, account_number: int, amount: int):
         if self.is_message_public(ctx):
             await ctx.send('Eu LITERALMENTE não tenho ideia o que é um dix??')
             await ctx.message.author.send('CARAMBOLAS MEU CARAMBOLAS O CARA QUER MANDAR PIX NO PUBLICO\nFICA ESPERTO MANO FICA')
         
-        ## checks
-
+        ## checks 
         uid = self.get_uid(ctx)
+        conn = sqlite3.connect('currency.db')
 
-        cursor = self.conn.execute("SELECT * from users WHERE id=?", (uid,))
 
-        row = cursor.fetchone()
+        cursor = conn.execute("SELECT * from users WHERE id=?", (uid,))
+        sender_row = cursor.fetchone()
+        cursor.close()
 
-        if float(accounts[account_number]['cash']) < float(arg1):
-            embed = discord.Embed(title=":x: Algo deu errado", description="Dinheiro insuficiente.", color=discord.Color.purple())
-            return embed
+        cursor = conn.execute("SELECT * from users WHERE account=?", (account_number,))
+        reciever_row = cursor.fetchone()
+        cursor.close()
 
-        if float(arg1) <= 0:
-            embed = discord.Embed(title=":x: Algo deu errado", description="Quantidade Inválida", color=discord.Color.purple())
-            return embed
-        
-        if str(arg2) not in accounts and str(arg2) not in stores:
-            embed = discord.Embed(title=":x: Algo deu errado", description="Conta {conta} não existe.".format(conta=arg2), color=discord.Color.purple())
-            return embed
-        ##
-        
-        if str(arg2) in accounts:
-            accounts[account_number]['cash'] = float(f"{(float(accounts[account_number]['cash']) - float(arg1)):.2f}")
-            accounts[str(arg2)]['cash'] = float(f"{(float(accounts[str(arg2)]['cash']) + float(arg1)):.2f}")
+        reciever_money = reciever_row[3]
+        sender_money = sender_row[3]
 
-            
-        elif str(arg2) in stores:
-            
-            accounts[account_number]['cash'] = float(f"{(float(accounts[account_number]['cash']) - float(arg1)):.2f}")
-            
-        for i, owner in enumerate(stores[str(arg2)]['owners']):
+        # check if sender account exists
 
-            perc = float(stores[str(arg2)]['percentages'][i])
-            print(accounts[owner]['cash'])
-            accounts[owner]['cash'] = float(f"{(float(accounts[owner]['cash']) + (float(arg1) * perc/100)):.2f}")
-            print(accounts[owner]['cash'])
+        if sender_row is None:
+            await ctx.message.author.send('Voce não tem conta')
+            cursor.close()
+            return
+
+        # check if recipient account exists
+
+        if reciever_row is None:
+            await ctx.message.author.send('Conta não encontrada na db')
+            cursor.close()
+            return
+
+        #
+
+        if amount < 0:
+            await ctx.message.author.send('Dinheiro inválido!')
+            cursor.close()
+            return
+
+        if sender_money < amount:
+            await ctx.message.author.send('Não tem dinheiro suficiente!')
+            cursor.close()
+            return
+
+        ## END OF CHECKS
+        # sends the money
+
+        conn.execute('UPDATE users SET money = ? WHERE id = ?', (sender_money - amount, uid))
+        conn.execute('UPDATE users SET money = ? WHERE account = ?', (reciever_money + amount, account_number))
+
+        await ctx.message.author.send('Transferido.')
+
+        conn.commit()
+        conn.close()
 
     @commands.command()
     async def lst(self, ctx):
+
         if self.is_message_public(ctx):
             await ctx.send('lista ? de que ?')
             await ctx.message.author.send('tu quer que peguem a gente memo ne?')
 
         # # # # #
         uid = self.get_uid(ctx)
+        conn = sqlite3.connect('currency.db')
 
-        cursor = self.conn.execute("SELECT account, name from users")
+
+        cursor = conn.execute("SELECT account, name from users")
         rows = cursor.fetchall()
 
         names_in_code = ''
@@ -153,9 +181,24 @@ class Currency(commands.Cog):
 
 
         #
-
         await ctx.message.author.send('Pessoas que tem contas: ' + names_in_code)
 
         cursor.close()
+        conn.close()
 
-            
+    @commands.command()
+    async def add(self, ctx, account_number: int, amount: int):
+        # my id
+        if ctx.author.id == 226524214411132928:
+            conn = sqlite3.connect('currency.db')
+
+            cursor = conn.execute("SELECT money from users WHERE account=?", (account_number,))
+            money_str = cursor.fetchone()[0]
+
+            conn.execute('UPDATE users SET money = ? WHERE account = ?', (money_str + amount, account_number))
+            conn.commit()
+            conn.close()
+
+            await ctx.send("Atualizado.")
+        else:
+            return
