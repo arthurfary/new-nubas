@@ -95,12 +95,14 @@ class Currency(commands.Cog):
     
     @commands.command()
     async def showdb(self, ctx):
-        conn = sqlite3.connect('currency.db')
-        cursor = conn.execute("SELECT * from users")
+        if ctx.author.id == 226524214411132928:
+            conn = sqlite3.connect('currency.db')
+            cursor = conn.execute("SELECT * from users")
 
-        for row in cursor:
-            await ctx.message.author.send(row)
+            for row in cursor:
+                await ctx.message.author.send(row)
 
+        
     @commands.command()
     async def dix(self, ctx, account_number: int, amount: int):
         if self.is_message_public(ctx):

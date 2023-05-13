@@ -5,6 +5,7 @@ from discord.ext import commands
 
 from cogs.currency.currency_cog import Currency
 from cogs.sever.server_cog import Server
+from cogs.error_handler.error_handler_cog import ErrorHandler
 
 
 # Get the Discord token from the environment variables
@@ -20,10 +21,11 @@ async def on_ready():
     print('> Loading cogs...')
 
     # bot cogs
-    # await bot.add_cog(Currency(bot))
+    await bot.add_cog(Currency(bot))
     await bot.add_cog(Server(bot))
    
-
+    await bot.add_cog(ErrorHandler(bot))
+    
     print('> Cogs loaded!')
     print('> Bot ready!')
 
