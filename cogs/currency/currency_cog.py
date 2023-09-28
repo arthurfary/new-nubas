@@ -14,12 +14,12 @@ class Currency(commands.Cog):
         conn = sqlite3.connect('currency.db')
 
         
-        '''
+        ''' 
         conn.execute('DROP TABLE users')
         conn.commit()
         exit()
-
         '''
+        
         # create in first execution
         conn.execute('''CREATE TABLE IF NOT EXISTS users
              (id INTEGER PRIMARY KEY,
@@ -59,6 +59,11 @@ class Currency(commands.Cog):
         if cursor.fetchone() is not None:
             await ctx.message.author.send('Se ja tem conta caraio')
             return 
+        
+        cursor = conn.execute("SELECT * from users WHERE account=?", (account_number,))
+
+        if cursor.fetchone() is not None:
+            await ctx.message.author.send(f"Ja tem uma conta com esse número.")
 
         else:
             conn.execute("INSERT INTO users (id, account, name, money) VALUES (?, ?, ?, ?)", (uid, account_number, ctx.message.author.name, 0))
