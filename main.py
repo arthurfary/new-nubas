@@ -10,7 +10,7 @@ from cogs.error_handler.error_handler_cog import ErrorHandler
 
 # Get the Discord token from the environment variables
 load_dotenv()
-TOKEN = os.getenv('DISCORD_TOKEN_DEV')
+TOKEN = os.getenv('DISCORD_TOKEN')
 
 # Create a bot instance with a command prefix
 bot = commands.Bot(command_prefix='$', intents=discord.Intents.all())
