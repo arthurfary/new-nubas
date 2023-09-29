@@ -3,7 +3,6 @@ import sqlite3
 
 class Database:
     def __init__(self, db_name):
-        print(db_name)
         self.db_name = db_name
         self.create_db_if_not_created()
 
@@ -13,7 +12,7 @@ class Database:
             (id INTEGER PRIMARY KEY,
             account INTEGER NOT NULL,
             name TEXT NOT NULL,
-            money INTEGER NOT NULL);''')
+            money FLOAT NOT NULL);''')
         conn.close()
 
     def open_connection(self):
@@ -58,7 +57,7 @@ class Database:
     
     def add_intrest_to_all_registered_accounts(self, rate):
         self.open_connection()
-        cursor = self.conn.execute(f"UPDATE users SET money = money * {rate}")
+        cursor = self.conn.execute(f"UPDATE users SET money = money + money * {rate}")
         self.commit()
         self.close_connection()
         return cursor

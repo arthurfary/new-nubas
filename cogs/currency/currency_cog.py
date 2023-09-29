@@ -1,8 +1,8 @@
 import discord
 from discord.ext import commands, tasks
-from discord.ext.commands.converter import MemberConverter
 import sqlite3
 
+from cogs.currency.interest import InterestHandler
 from cogs.currency.currency_db_handler import Database as db
 
 class Currency(commands.Cog):
@@ -13,6 +13,15 @@ class Currency(commands.Cog):
         self.db_path = 'cogs/currency/currency.db'
         self.bot = bot
         self.db = db(self.db_path)
+
+        self.interest_task_loop.start()
+
+    @tasks.loop(hours=12)
+    async def interest_task_loop(self):
+        print('test')
+        interest = InterestHandler(self.db_path)
+        interest.add_intrest_if_one_day_is_passed()
+        
 
     def is_account_number_valid(self, account_number):
         if len(str(account_number)) == 2 and account_number > 0:
