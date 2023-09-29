@@ -3,32 +3,53 @@ from discord.ext import commands, tasks
 from discord.ext.commands.converter import MemberConverter
 import sqlite3
 
+from cogs.currency.currency_db_handler import Database as db
+
 class Currency(commands.Cog):
     '''
     cog que lida com comandos relacionado com dinheiro
     '''
     def __init__(self, bot):
+        self.db_path = 'cogs/currency/currency.db'
         self.bot = bot
+        self.db = db(self.db_path)
 
-        # NEE TO ADD CONN TO ALL FUNTIOPNS
-        conn = sqlite3.connect('currency.db')
+    def is_account_number_valid(self, account_number):
+        if len(str(account_number)) == 2 and account_number > 0:
+            return True
+        else:
+            return False
 
-        
-        ''' 
-        conn.execute('DROP TABLE users')
-        conn.commit()
-        exit()
-        '''
-        
-        # create in first execution
-        conn.execute('''CREATE TABLE IF NOT EXISTS users
-             (id INTEGER PRIMARY KEY,
-             account INTAGER NOT NULL,
-             name TEXT NOT NULL,
-             money INTEGER NOT NULL);''')
+    def is_user_already_in_db(self, ctx):
+        uid = self.get_uid(ctx)
+        cursor = self.db.fetch_one_by_uid(uid)
 
-        conn.close()
+        if cursor is not None:
+            return True
+        else:
+            return False
+
+    def is_account_already_in_db(self, account_number):
+        cursor = self.db.fetch_one_by_account_num(account_number)
+        if cursor is not None:
+            return True
+        else:
+            return False
+
+    def is_join_valid(self, ctx, account_number):
+
+        if self.is_user_already_in_db(ctx):
+            raise Exception("Usuário já registrado.")
+
+        elif self.is_account_already_in_db(account_number):
+            raise Exception("Número da conta já registrado.")
         
+        elif not self.is_account_number_valid(account_number):
+            raise Exception("Número da conta inválido, deve ser um número inteiro entre 10 e 99.")
+        
+        else: 
+            return True
+
     def get_uid(self, ctx) -> int:
         '''
         Retorna User Id em string
@@ -43,36 +64,11 @@ class Currency(commands.Cog):
         
     @commands.command()
     async def join(self, ctx, account_number: int):
-        if self.is_message_public(ctx):
-            await ctx.send('Join o que meu se é besta? ta acontecendo nd n!')
+        if self.is_join_valid(ctx, account_number):
+            uid = self.get_uid(ctx)
+            self.db.create_and_commit_db_entry(uid, account_number, ctx.message.author.name)
+            await ctx.send(f'Conta criada com o número {account_number}')
 
-        if len(str(account_number)) != 2 or account_number < 0:
-            await ctx.message.author.send(f'Conta invalida: {account_number}')
-            return
-
-        # # # # #
-        uid = self.get_uid(ctx)
-        conn = sqlite3.connect('currency.db')
-
-        cursor = conn.execute("SELECT * from users WHERE id=?", (uid,))
-
-        if cursor.fetchone() is not None:
-            await ctx.message.author.send('Se ja tem conta caraio')
-            return 
-        
-        cursor = conn.execute("SELECT * from users WHERE account=?", (account_number,))
-
-        if cursor.fetchone() is not None:
-            await ctx.message.author.send(f"Ja tem uma conta com esse número.")
-
-        else:
-            conn.execute("INSERT INTO users (id, account, name, money) VALUES (?, ?, ?, ?)", (uid, account_number, ctx.message.author.name, 0))
-            conn.commit()
-
-            await ctx.message.author.send('Te adicionei ao esquema, mas deixa baixo :shushing_face:')
-
-        cursor.close()
-        conn.close()
 
     @commands.command()
     async def saldo(self, ctx):
@@ -82,7 +78,7 @@ class Currency(commands.Cog):
 
         # # # # #
         uid = self.get_uid(ctx)
-        conn = sqlite3.connect('currency.db')
+        conn = sqlite3.connect(self.db_path)
 
         cursor = conn.execute("SELECT * from users WHERE id=?", (uid,))
 
@@ -101,7 +97,7 @@ class Currency(commands.Cog):
     @commands.command()
     async def showdb(self, ctx):
         if ctx.author.id == 226524214411132928:
-            conn = sqlite3.connect('currency.db')
+            conn = sqlite3.connect(self.db_path)
             cursor = conn.execute("SELECT * from users")
 
             for row in cursor:
@@ -116,7 +112,7 @@ class Currency(commands.Cog):
         
         ## checks 
         uid = self.get_uid(ctx)
-        conn = sqlite3.connect('currency.db')
+        conn = sqlite3.connect(self.db_path)
 
 
         cursor = conn.execute("SELECT * from users WHERE id=?", (uid,))
@@ -176,7 +172,7 @@ class Currency(commands.Cog):
 
         # # # # #
         uid = self.get_uid(ctx)
-        conn = sqlite3.connect('currency.db')
+        conn = sqlite3.connect(self.db_path)
 
 
         cursor = conn.execute("SELECT account, name from users")
@@ -197,7 +193,7 @@ class Currency(commands.Cog):
     async def add(self, ctx, account_number: int, amount: int):
         # my id
         if ctx.author.id == 226524214411132928:
-            conn = sqlite3.connect('currency.db')
+            conn = sqlite3.connect(self.db_path)
 
             cursor = conn.execute("SELECT money from users WHERE account=?", (account_number,))
             money_str = cursor.fetchone()[0]
