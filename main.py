@@ -8,19 +8,15 @@ from cogs.currency.currency_cog import Currency
 from cogs.error_handler.error_handler_cog import ErrorHandler
 
 
-# Get the Discord token from the environment variables
 load_dotenv()
 TOKEN = os.getenv('DISCORD_TOKEN_DEV')
 
-# Create a bot instance with a command prefix
 bot = commands.Bot(command_prefix='$', intents=discord.Intents.all())
 
-# Add the Greetings cog to the bot within an async function
 @bot.event
 async def on_ready():
     print('> Loading cogs...')
 
-    # bot cogs
     await bot.add_cog(Md(bot))
 
     await bot.add_cog(Currency(bot))
