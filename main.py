@@ -9,7 +9,7 @@ from cogs.error_handler.error_handler_cog import ErrorHandler
 
 
 load_dotenv()
-TOKEN = os.getenv('DISCORD_TOKEN_DEV')
+TOKEN = os.getenv('DISCORD_TOKEN')
 
 bot = commands.Bot(command_prefix='$', intents=discord.Intents.all())
 
