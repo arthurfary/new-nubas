@@ -16,12 +16,14 @@ class Currency(commands.Cog):
 
         self.interest_task_loop.start()
 
+
     @tasks.loop(hours=12)
     async def interest_task_loop(self):
         print('Checando interesse...')
         interest = InterestHandler(self.db_path)
         interest.add_intrest_if_one_day_is_passed()
-        
+
+
     @commands.command()
     async def join(self, ctx, account_number: int):
         if self.is_join_valid(ctx, account_number):
@@ -31,6 +33,7 @@ class Currency(commands.Cog):
             self.db.create_and_commit_db_entry(uid, account_number, name)
             await ctx.send(f'Conta criada com o número {account_number}! Bem vindo ao Nubas!')
 
+
     @commands.command()
     async def saldo(self, ctx):
         if self.is_user_in_db(ctx):
@@ -39,6 +42,7 @@ class Currency(commands.Cog):
         else:
             raise Exception("Conta não registrada.")
 
+
     @commands.command()
     async def showdb(self, ctx):
         if self.is_me(ctx):
@@ -46,11 +50,13 @@ class Currency(commands.Cog):
             for row in cursor:
                 await ctx.message.author.send(row)
 
+
     @commands.command()
     async def dix(self, ctx, account_number: int, amount: float):
         if self.is_transfer_valid(ctx, account_number, amount):
             self.db.transfer_money(self.get_uid(ctx), account_number, amount)
             await ctx.send(f'{amount} Transferidos para a conta {account_number}')
+
 
     @commands.command()
     async def lst(self, ctx):
@@ -73,14 +79,17 @@ class Currency(commands.Cog):
         else:
             raise Exception('Conta não existe.')
 
+
     def is_me(ctx):
         return ctx.message.author.id == 226524214411132928
+
 
     def is_account_number_valid(self, account_number):
         if len(str(account_number)) == 2 and account_number > 0:
             return True
         else:
             return False
+
 
     def is_user_in_db(self, ctx):
         uid = self.get_uid(ctx)
@@ -91,12 +100,14 @@ class Currency(commands.Cog):
         else:
             return False
 
+
     def is_account_number_in_db(self, account_number):
         cursor = self.db.fetch_one_by_account_num(account_number)
         if cursor is not None:
             return True
         else:
             return False
+
 
     def is_join_valid(self, ctx, account_number):
 
@@ -111,7 +122,8 @@ class Currency(commands.Cog):
         
         else: 
             return True
-        
+
+
     def is_transfer_valid(self, ctx, account_number, amount):
         if not self.is_user_in_db(ctx):
             raise Exception("É preciso ter uma conta para fazer um trasnferência")
@@ -128,9 +140,11 @@ class Currency(commands.Cog):
         else:
             return True
 
+
     def get_uid(self, ctx) -> int:
         return int(ctx.message.author.id)
 
+    
     def get_author_name(self, ctx) -> str:
         return str(ctx.message.author.name)
 
