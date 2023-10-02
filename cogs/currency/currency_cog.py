@@ -71,16 +71,15 @@ class Currency(commands.Cog):
 
     @commands.command()
     async def add(self, ctx, account_number: int, amount: float):
-        if self.is_me():
+        if self.is_me(ctx):
             if self.is_account_number_in_db(account_number):
                 self.db.add_money_in_account(amount, account_number)
-                await ctx.send(f"{amount} adicionado a conta {account_number}.")
-        
+                await ctx.send(f"{amount} adicionado a conta {account_number}.")   
         else:
             raise Exception('Conta não existe.')
 
 
-    def is_me(ctx):
+    def is_me(self, ctx):
         return ctx.message.author.id == 226524214411132928
 
 

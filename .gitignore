@@ -164,3 +164,8 @@ cython_debug/
 Dockerfile
 fly.toml
 Procfile
+
+
+cogs/currency/currency.db
+cogs/currency/last_interest.txt
+
