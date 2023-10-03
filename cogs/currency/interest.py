@@ -19,11 +19,11 @@ class InterestHandler:
             return False
 
     def get_registered_datetime(self):
-        with open(self.last_interest_path, 'r') as f:
+        with open(self.last_interest_path, 'r', encoding='utf-8') as f:
             return f.read()
 
     def set_registered_datetime(self, date):
-        with open(self.last_interest_path, 'w') as f:
+        with open(self.last_interest_path, 'w', encoding='utf-8') as f:
             f.write(str(date))
 
     def update_registered_datetime(self):
